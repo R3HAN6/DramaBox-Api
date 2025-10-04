@@ -1,11 +1,12 @@
-import axios from "axios";
-import { token } from "./get-token.js";
+import axios from "axios"
+import { token } from "./get-token.js"
 
 export default async function handler(req, res) {
+    const { bookId, episode } = req.query
+    if (!bookId || !episode) return res.status(400).json({ error: "bookId dan episode wajib" })
     try {
-        const gettoken = await token();
-        const url = "https://sapi.dramaboxdb.com/drama-box/chapterv2/batch/load";
-
+        const gettoken = await token()
+        const url = "https://sapi.dramaboxdb.com/drama-box/chapterv2/batch/load"
         const headers = {
             "User-Agent": "okhttp/4.10.0",
             "Accept-Encoding": "gzip",
@@ -22,12 +23,11 @@ export default async function handler(req, res) {
             "p": "43",
             "time-zone": "+0800",
             "content-type": "application/json; charset=UTF-8"
-        };
-
+        }
         const data = {
             boundaryIndex: 0,
             comingPlaySectionId: -1,
-            index: 1,
+            episode: Number(episode),
             currencyPlaySource: "discover_new_rec_new",
             needEndRecommend: 0,
             currencyPlaySourceName: "",
@@ -36,15 +36,11 @@ export default async function handler(req, res) {
             pullCid: "",
             loadDirection: 0,
             startUpKey: "",
-            bookId: "41000102902"
-        };
-
-        const response = await axios.post(url, data, { headers });
-        // kirim response ke client
-        res.status(200).json(response.data.data.chapterList[0].cdnList[0]);
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: error.message });
+            bookId
+        }
+        const response = await axios.post(url, data, { headers })
+        res.status(200).json(response.data.data.chapterList[0].cdnList[0])
+    } catch (err) {
+        res.status(500).json({ error: err.message })
     }
 }
