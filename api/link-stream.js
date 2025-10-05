@@ -44,7 +44,7 @@ export default async function handler(req, res) {
         const chapter = response.data.data.chapterList[0]
         const videos = chapter.cdnList
             .filter(cdn => cdn.cdnDomain.includes("nakavideo"))
-            .map(cdn => cdn.videoPathList)
+            .map(cdn => cdn.videoPathList.map(v => ({ quality: v.quality, videoPath: v.videoPath })))
             .flat()
 
         const result = {
