@@ -42,12 +42,17 @@ export default async function handler(req, res) {
 
         const response = await axios.post(url, data, { headers })
         const chapter = response.data.data.chapterList[0]
+        const videos = chapter.cdnList
+            .filter(cdn => cdn.cdnDomain.includes("nakavideo"))
+            .map(cdn => cdn.videoPathList)
+            .flat()
+
         const result = {
             bookTitle: response.data.data.bookTitle,
             episode: chapter.index,
             chapterId: chapter.chapterId,
             title: chapter.title,
-            videos: chapter.cdnList.map(cdn => cdn.videoPathList).flat()
+            videos
         }
 
         res.status(200).json(result)
