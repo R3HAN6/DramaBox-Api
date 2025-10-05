@@ -25,6 +25,7 @@ export default async function handler(req, res) {
             "time-zone": "+0800",
             "content-type": "application/json; charset=UTF-8"
         }
+
         const data = {
             boundaryIndex: 0,
             comingPlaySectionId: -1,
@@ -52,6 +53,7 @@ export default async function handler(req, res) {
             episode: chapter.index,
             chapterId: chapter.chapterId,
             title: chapter.title,
+            description: chapter.description || "", 
             videos
         }
 
