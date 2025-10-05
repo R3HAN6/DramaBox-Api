@@ -2,8 +2,8 @@ import axios from "axios"
 import { token } from "./get-token.js"
 
 export default async function handler(req, res) {
-    const { bookId, index } = req.query
-    if (!bookId || !index) return res.status(400).json({ error: "bookId dan index wajib" })
+    const { bookId, episode } = req.query
+    if (!bookId || !episode) return res.status(400).json({ error: "bookId dan episode wajib" })
     try {
         const gettoken = await token()
         const url = "https://sapi.dramaboxdb.com/drama-box/chapterv2/batch/load"
@@ -27,7 +27,7 @@ export default async function handler(req, res) {
         const data = {
             boundaryIndex: 0,
             comingPlaySectionId: -1,
-            index: Number(index),
+            index: Number(episode),
             currencyPlaySource: "discover_new_rec_new",
             needEndRecommend: 0,
             currencyPlaySourceName: "",
@@ -40,8 +40,14 @@ export default async function handler(req, res) {
         }
         const response = await axios.post(url, data, { headers })
         const chapter = response.data.data.chapterList[0]
-        const allVideos = chapter.cdnList.map(cdn => cdn.videoPathList).flat()
-        res.status(200).json(allVideos)
+        const chapterWithVideos = {
+            bookTitle: response.data.data.bookTitle,
+            episode: chapter.index,
+            chapterId: chapter.chapterId,
+            title: chapter.title,
+            videos: chapter.cdnList.map(cdn => cdn.videoPathList).flat()
+        }
+        res.status(200).json(chapterWithVideos)
     } catch (err) {
         res.status(500).json({ error: err.message })
     }
