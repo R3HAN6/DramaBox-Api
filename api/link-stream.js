@@ -2,8 +2,8 @@ import axios from "axios"
 import { token } from "./get-token.js"
 
 export default async function handler(req, res) {
-    const { bookId } = req.query
-    if (!bookId) return res.status(400).json({ error: "bookId wajib" })
+    const { bookId, episode } = req.query
+    if (!bookId || !episode) return res.status(400).json({ error: "bookId dan episode wajib" })
 
     try {
         const gettoken = await token()
@@ -25,48 +25,32 @@ export default async function handler(req, res) {
             "time-zone": "+0800",
             "content-type": "application/json; charset=UTF-8"
         }
-
-        // request untuk chapter pertama
-        let chapters = []
-        let index = 1
-        let hasMore = true
-
-        while (hasMore) {
-            const data = {
-                boundaryIndex: 0,
-                comingPlaySectionId: -1,
-                index: index,
-                currencyPlaySource: "discover_new_rec_new",
-                needEndRecommend: 0,
-                currencyPlaySourceName: "",
-                preLoad: false,
-                rid: "",
-                pullCid: "",
-                loadDirection: 0,
-                startUpKey: "",
-                bookId
-            }
-
-            const response = await axios.post(url, data, { headers })
-            const chapterList = response.data.data.chapterList
-            if (!chapterList || chapterList.length === 0) {
-                hasMore = false
-                break
-            }
-
-            chapterList.forEach(chapter => {
-                chapters.push({
-                    episode: chapter.index,
-                    chapterId: chapter.chapterId,
-                    title: chapter.title,
-                    videos: chapter.cdnList.map(cdn => cdn.videoPathList).flat()
-                })
-            })
-
-            index++
+        const data = {
+            boundaryIndex: 0,
+            comingPlaySectionId: -1,
+            index: Number(episode),
+            currencyPlaySource: "discover_new_rec_new",
+            needEndRecommend: 0,
+            currencyPlaySourceName: "",
+            preLoad: false,
+            rid: "",
+            pullCid: "",
+            loadDirection: 0,
+            startUpKey: "",
+            bookId
         }
 
-        res.status(200).json({ bookTitle: chapters[0]?.bookTitle || "", chapters })
+        const response = await axios.post(url, data, { headers })
+        const chapter = response.data.data.chapterList[0]
+        const result = {
+            bookTitle: response.data.data.bookTitle,
+            episode: chapter.index,
+            chapterId: chapter.chapterId,
+            title: chapter.title,
+            videos: chapter.cdnList.map(cdn => cdn.videoPathList).flat()
+        }
+
+        res.status(200).json(result)
     } catch (err) {
         res.status(500).json({ error: err.message })
     }
