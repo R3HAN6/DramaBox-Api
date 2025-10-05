@@ -1,13 +1,10 @@
-import axios from "axios"
-import { token } from "./get-token.js"
+import axios from "axios";
+import { token } from "./get-token.js";
 
-export default async function handler(req, res) {
-    const { bookId, episode } = req.query
-    if (!bookId || !episode) return res.status(400).json({ error: "bookId dan episode wajib" })
-
+async function getStream(bookId, episode) {
     try {
-        const gettoken = await token()
-        const url = "https://sapi.dramaboxdb.com/drama-box/chapterv2/batch/load"
+        const gettoken = await token();
+        const url = "https://sapi.dramaboxdb.com/drama-box/chapterv2/batch/load";
         const headers = {
             "User-Agent": "okhttp/4.10.0",
             "Accept-Encoding": "gzip",
@@ -24,12 +21,11 @@ export default async function handler(req, res) {
             "p": "43",
             "time-zone": "+0800",
             "content-type": "application/json; charset=UTF-8"
-        }
-
+        };
         const data = {
             boundaryIndex: 0,
             comingPlaySectionId: -1,
-            index: Number(episode),
+            index: episode,
             currencyPlaySource: "discover_new_rec_new",
             needEndRecommend: 0,
             currencyPlaySourceName: "",
@@ -39,26 +35,27 @@ export default async function handler(req, res) {
             loadDirection: 0,
             startUpKey: "",
             bookId
-        }
-
-        const response = await axios.post(url, data, { headers })
-        const chapter = response.data.data.chapterList[0]
+        };
+        const res = await axios.post(url, data, { headers });
+        const chapter = res.data.data.chapterList[0];
         const videos = chapter.cdnList
-            .filter(cdn => cdn.cdnDomain.includes("nakavideo"))
-            .map(cdn => cdn.videoPathList.map(v => ({ quality: v.quality, videoPath: v.videoPath })))
-            .flat()
-
+            .filter(v => v.videoPath)
+            .map(v => ({
+                quality: v.quality,
+                videoPath: v.videoPath
+            }));
         const result = {
-            bookTitle: response.data.data.bookTitle,
-            episode: chapter.index,
+            bookId,
+            episode,
+            title: chapter.title || `Episode ${episode}`,
+            description: chapter.description || "Tidak ada deskripsi tersedia",
             chapterId: chapter.chapterId,
-            title: chapter.title,
-            description: chapter.description || "", 
             videos
-        }
-
-        res.status(200).json(result)
-    } catch (err) {
-        res.status(500).json({ error: err.message })
+        };
+        return result;
+    } catch (error) {
+        return { error: error.message };
     }
 }
+
+export { getStream };
